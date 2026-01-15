@@ -1,8 +1,13 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { db } from "@/db"; // Our database connection
-import { users } from "@/db/schema"; // Our schema
+import { db } from "@/db";
+import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
+import NewDocumentButton from "@/components/new-doc-btn";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { desc } from "drizzle-orm";
+import { documents } from "@/db/schema";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   // 1. Get the user from Clerk
@@ -31,33 +36,51 @@ export default async function DashboardPage() {
     console.log(`🆕 New User Synced: ${email}`);
   }
 
-  // 4. Render the UI
+  // 4. Get the user's documents
+  const userDocuments = await db.query.documents.findMany({
+    where: eq(documents.userId, userId),
+    orderBy: (documents, { desc }) => [desc(documents.createdAt)],
+  });
   return (
     <div className='p-10 max-w-4xl mx-auto space-y-8'>
       <div className='flex items-center justify-between'>
-        <div>
-          <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
-          <p className='text-muted-foreground mt-2'>
-            Welcome back, {user.firstName || "User"}.
-          </p>
-        </div>
-
-        {/* Simple Badge to show DB status */}
-        <div className='bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium border border-green-200'>
-          Database Connected
-        </div>
+        <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
+        {/* The New Button */}
+        <NewDocumentButton />
       </div>
 
+      {/* Grid of Documents */}
       <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-        {/* Placeholder Cards */}
-        <div className='border rounded-xl p-6 shadow-sm'>
-          <h3 className='font-semibold mb-2'>My Documents</h3>
-          <p className='text-2xl font-bold'>0</p>
-        </div>
-        <div className='border rounded-xl p-6 shadow-sm'>
-          <h3 className='font-semibold mb-2'>Generations</h3>
-          <p className='text-2xl font-bold'>0</p>
-        </div>
+        {userDocuments.length === 0 ? (
+          <div className='col-span-full text-center text-gray-500 py-10'>
+            No documents yet. Click "New Document" to get started.
+          </div>
+        ) : (
+          userDocuments.map((doc) => (
+            <Link
+              key={doc.id}
+              href={`/dashboard/document/${doc.id}`}
+              className='block'
+            >
+              <Card
+                key={doc.id}
+                className='hover:bg-slate-50 transition cursor-pointer'
+              >
+                <CardHeader>
+                  <CardTitle className='truncate'>{doc.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className='text-sm text-muted-foreground line-clamp-3'>
+                    {doc.content || "No content"}
+                  </p>
+                  <p className='text-xs text-gray-400 mt-4'>
+                    {doc.createdAt.toLocaleDateString()}
+                  </p>
+                </CardContent>
+              </Card>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );

@@ -1,13 +1,11 @@
-import { auth, currentUser } from "@clerk/nextjs/server";
-import { redirect } from "next/navigation";
 import { db } from "@/db";
-import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import NewDocumentButton from "@/components/new-doc-btn";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { users } from "@/db/schema";
 import { documents } from "@/db/schema";
-import Link from "next/link";
+import { redirect } from "next/navigation";
+import DocumentCard from "@/components/document-card";
 import { UsageMeter } from "@/components/usage-meter";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import UploadDocumentButton from "@/components/upload-doc-btn";
 
 export default async function DashboardPage() {
@@ -60,30 +58,7 @@ export default async function DashboardPage() {
             No documents yet. Click "New Document" to get started.
           </div>
         ) : (
-          userDocuments.map((doc) => (
-            <Link
-              key={doc.id}
-              href={`/dashboard/document/${doc.id}`}
-              className='block'
-            >
-              <Card
-                key={doc.id}
-                className='hover:bg-slate-50 transition cursor-pointer'
-              >
-                <CardHeader>
-                  <CardTitle className='truncate'>{doc.title}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className='text-sm text-muted-foreground line-clamp-3'>
-                    {doc.content || "No content"}
-                  </p>
-                  <p className='text-xs text-gray-400 mt-4'>
-                    {doc.createdAt.toLocaleDateString()}
-                  </p>
-                </CardContent>
-              </Card>
-            </Link>
-          ))
+          userDocuments.map((doc) => <DocumentCard key={doc.id} doc={doc} />)
         )}
       </div>
     </div>

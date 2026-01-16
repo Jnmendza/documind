@@ -1,13 +1,12 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { documents, generations } from "@/db/schema";
-import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { auth } from "@clerk/nextjs/server";
+import { documents, generations } from "@/db/schema";
 
-// 👇 1. UPDATE IMPORTS (Destructure the class)
-// Note: We use 'require' to avoid TypeScript "no default export" issues with this specific package
+// Use 'require' to avoid TypeScript "no default export" issues with this specific package
 const { PDFParse } = require("pdf-parse");
 
 // (Optional) Keep the polyfill just in case, though v2 is more robust
@@ -129,4 +128,22 @@ export async function updateDocument(documentId: string, newContent: string) {
     .where(eq(documents.id, documentId));
 
   revalidatePath(`/dashboard/document/${documentId}`);
+}
+
+export async function deleteDocument(documentId: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  // Verify ownership
+  const [doc] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+
+  if (!doc) throw new Error("Unauthorized");
+
+  // Delete the document
+  await db.delete(documents).where(eq(documents.id, documentId));
+
+  revalidatePath("/dashboard");
 }

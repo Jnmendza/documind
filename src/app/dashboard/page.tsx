@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { documents } from "@/db/schema";
 import Link from "next/link";
 import { UsageMeter } from "@/components/usage-meter";
+import UploadDocumentButton from "@/components/upload-doc-btn";
 
 export default async function DashboardPage() {
   // 1. Get the user from Clerk
@@ -46,7 +47,7 @@ export default async function DashboardPage() {
       <div className='flex items-center justify-between'>
         <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
         {/* The New Button */}
-        <NewDocumentButton />
+        <UploadDocumentButton />
       </div>
       <div className='max-w-md'>
         <UsageMeter />

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Sparkles } from "lucide-react";
 import { saveGeneration } from "@/app/actions";
+import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
 
 interface AiEditorProps {
@@ -94,8 +95,8 @@ export default function AiEditor({
               </h3>
 
               {completion ? (
-                <div className='prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap'>
-                  {completion}
+                <div className='prose prose-sm max-w-none text-gray-800 whitespace-pre-wrap overflow-y-auto max-h-[400px]'>
+                  <ReactMarkdown>{completion}</ReactMarkdown>
                 </div>
               ) : (
                 <div className='flex flex-col items-center justify-center h-40 text-gray-400 text-sm italic mt-20'>

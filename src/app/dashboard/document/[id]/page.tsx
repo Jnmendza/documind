@@ -4,6 +4,9 @@ import { documents, generations } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { redirect, notFound } from "next/navigation";
 import AiEditor from "@/components/ai-editor";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 // Define the shape of the params (Next.js 15 requires awaiting params)
 type PageProps = {
@@ -35,6 +38,12 @@ export default async function DocumentPage({ params }: PageProps) {
 
   return (
     <div className='max-w-4xl mx-auto p-10 space-y-8'>
+      <Link
+        href={`/dashboard`}
+        className='flex items-center mb-2 text-sm text-slate-500 hover:text-slate-700 transition-colors w-fit'
+      >
+        <ArrowLeft className='h-4 w-4 mr-2' /> Back to Dashboard
+      </Link>
       <div className='flex justify-between items-start'>
         <h1 className='text-4xl font-bold'>{doc.title}</h1>
         <span className='text-sm text-gray-400'>

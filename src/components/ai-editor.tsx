@@ -23,7 +23,24 @@ export default function AiEditor({
   const { complete, completion, isLoading } = useCompletion({
     api: "/api/completion",
     streamProtocol: "text",
-    onError: (err) => console.error(err),
+    onError: (err) => {
+      // The error message comes from the Response body set above
+      const message = err.message || "Something went wrong";
+
+      if (message.includes("daily limit")) {
+        toast.error("Daily Limit Reached", {
+          description:
+            "You have used your 3 free credits for today. Upgrade to Pro for unlimited access.",
+          descriptionClassName: "!text-zinc-700 font-medium",
+          action: {
+            label: "Upgrade",
+            onClick: () => console.log("Redirect to Stripe..."),
+          },
+        });
+      } else {
+        toast.error("AI Error", { description: message });
+      }
+    },
     initialCompletion: initialAiResponse,
     onFinish: async (prompt, result) => {
       console.log("Saving to DB...");

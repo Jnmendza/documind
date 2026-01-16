@@ -5,9 +5,9 @@ import { users } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import NewDocumentButton from "@/components/new-doc-btn";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { desc } from "drizzle-orm";
 import { documents } from "@/db/schema";
 import Link from "next/link";
+import { UsageMeter } from "@/components/usage-meter";
 
 export default async function DashboardPage() {
   // 1. Get the user from Clerk
@@ -47,6 +47,9 @@ export default async function DashboardPage() {
         <h1 className='text-3xl font-bold tracking-tight'>Dashboard</h1>
         {/* The New Button */}
         <NewDocumentButton />
+      </div>
+      <div className='max-w-md'>
+        <UsageMeter />
       </div>
 
       {/* Grid of Documents */}

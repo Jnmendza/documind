@@ -3,6 +3,7 @@ import { auth } from "@clerk/nextjs/server";
 import { BrainCircuit, FileText, Zap, Shield } from "lucide-react";
 import Link from "next/link";
 import Navbar from "@/components/nav-bar";
+import Image from "next/image";
 
 export default async function LandingPage() {
   const { userId } = await auth();
@@ -49,24 +50,24 @@ export default async function LandingPage() {
         </div>
 
         {/* Pseudo-Screenshot / Visual */}
-        <div className='mt-20 w-full max-w-5xl bg-white rounded-xl shadow-2xl border border-slate-200 p-2 sm:p-4 rotate-1 hover:rotate-0 transition duration-700 ease-out'>
-          <div className='bg-slate-50 rounded-lg border border-slate-100 aspect-video flex items-center justify-center overflow-hidden relative'>
-            {/* This mimics your editor UI */}
-            <div className='absolute inset-0 flex'>
-              <div className='w-1/2 border-r p-8 space-y-4'>
-                <div className='h-4 w-1/3 bg-slate-200 rounded animate-pulse' />
-                <div className='h-2 w-full bg-slate-100 rounded' />
-                <div className='h-2 w-full bg-slate-100 rounded' />
-                <div className='h-2 w-3/4 bg-slate-100 rounded' />
-              </div>
-              <div className='w-1/2 p-8 space-y-4 bg-indigo-50/10'>
-                <div className='h-4 w-1/4 bg-indigo-200 rounded animate-pulse' />
-                <div className='h-2 w-full bg-indigo-100 rounded' />
-                <div className='h-2 w-5/6 bg-indigo-100 rounded' />
-              </div>
-            </div>
-            <span className='z-10 bg-white px-4 py-2 rounded-full shadow-sm text-sm font-medium text-slate-500'>
-              Interactive Editor Demo
+        <div className='mt-20 w-full max-w-5xl relative'>
+          {/* Optional: A subtle colored glow behind the image to make it pop */}
+          <div className='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] h-[50%] bg-indigo-200/50 blur-[80px] -z-10'></div>
+
+          {/* The Image Container with "Vercel-style" treatment */}
+          {/* We keep the slight rotation (rotate-1) for a dynamic feel */}
+          <div className='relative rounded-xl border border-slate-200/50 bg-white/50 backdrop-blur p-2 sm:p-3 shadow-2xl ring-1 ring-slate-900/5 rotate-1 hover:rotate-0 transition-transform duration-500 ease-out'>
+            <Image
+              src='/ai-editor-preview.png' // This looks in the /public folder
+              alt='DocuMind Dashboard Interface'
+              width={1400} // Adjust these roughly to your actual image dimensions
+              height={900}
+              quality={95} // High quality for the hero image
+              priority={true} // Load this immediately as it's above the fold
+              className='rounded-lg border border-slate-100 shadow-sm w-full h-auto'
+            />
+            <span className='absolute bg-indigo-600 text-white top-4/5 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 px-4 py-2 rounded-full shadow-sm text-sm font-medium'>
+              AI Editor Demo
             </span>
           </div>
         </div>

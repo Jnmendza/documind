@@ -1,13 +1,14 @@
 "use client";
-
+import { useState } from "react";
 import { useCompletion } from "@ai-sdk/react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Loader2, Sparkles } from "lucide-react";
-import { saveGeneration } from "@/app/actions";
+import { Loader2, Sparkles, Save, PenLine } from "lucide-react";
+import { saveGeneration, updateDocument } from "@/app/actions";
 import ReactMarkdown from "react-markdown";
 import { toast } from "sonner";
+import { Textarea } from "./ui/textarea";
 
 interface AiEditorProps {
   documentId: string;
@@ -20,26 +21,67 @@ export default function AiEditor({
   initialContent,
   initialAiResponse,
 }: AiEditorProps) {
+  const [content, setContent] = useState<string>(initialContent || "");
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  // Check if text is different from initial content
+  const isDirty = content !== initialContent;
+
   const { complete, completion, isLoading } = useCompletion({
     api: "/api/completion",
     streamProtocol: "text",
-    onError: (err) => console.error(err),
     initialCompletion: initialAiResponse,
+    onError: (err) => {
+      // The error message comes from the Response body set above
+      const message = err.message || "Something went wrong";
+
+      if (message.includes("daily limit")) {
+        toast.error("Daily Limit Reached", {
+          description:
+            "You have used your 3 free credits for today. Upgrade to Pro for unlimited access.",
+          descriptionClassName: "!text-zinc-700 font-medium",
+          action: {
+            label: "Upgrade",
+            onClick: () => console.log("Redirect to Stripe..."),
+          },
+        });
+      } else {
+        toast.error("AI Error", { description: message });
+      }
+    },
     onFinish: async (prompt, result) => {
-      console.log("Saving to DB...");
-      await saveGeneration({
-        documentId,
-        originalPrompt: prompt,
-        aiOutput: result,
-      });
-      toast.success("AI Output saved!");
+      if (!result) return;
+      toast.promise(
+        saveGeneration({
+          documentId,
+          originalPrompt: prompt,
+          aiOutput: result,
+        }),
+        {
+          loading: "Saving AI response",
+          success: "Saved to database!",
+          error: "Failed to save.",
+        }
+      );
     },
   });
+
+  const handleSaveOriginal = async () => {
+    setIsSaving(true);
+    try {
+      await updateDocument(documentId, content);
+      toast.success("Document updated!");
+    } catch (error) {
+      toast.error("Failed to save changes.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const runAi = (command: string) => {
     complete(`
       Original Text:
-      "${initialContent}"
+      "${content}"
 
       Instruction:
       ${command}
@@ -68,17 +110,39 @@ export default function AiEditor({
 
       <div className='grid grid-cols-1 md:grid-cols-2 gap-6 h-[500px]'>
         {/* LEFT CARD: ORIGINAL */}
-        <Card className='h-full bg-slate-50 border-slate-200 overflow-hidden'>
-          <CardContent className='p-0 h-full'>
-            {/* ScrollArea requires a fixed height to work or 'h-full' on parent */}
-            <ScrollArea className='h-full p-6'>
-              <h3 className='font-semibold text-gray-500 mb-4 text-sm uppercase'>
-                Original
-              </h3>
-              <div className='whitespace-pre-wrap text-sm leading-relaxed text-gray-700'>
-                {initialContent}
-              </div>
-            </ScrollArea>
+        <Card className='flex flex-col h-full bg-white border-slate-200 shadow-sm overflow-hidden'>
+          {/* HEADER WITH SAVE BUTTON */}
+          <CardHeader className='flex flex-row items-center justify-between py-3 px-5 bg-slate-50 border-b border-slate-100'>
+            <CardTitle className='font-semibold text-gray-500 text-sm uppercase flex items-center gap-2'>
+              <PenLine className='w-4 h-4' />
+              Original Content
+            </CardTitle>
+            {isDirty && (
+              <Button
+                size='sm'
+                variant='outline'
+                onClick={handleSaveOriginal}
+                disabled={isSaving}
+                className='h-8 text-xs cursor-pointer bg-yellow-50 border-yellow-200 text-yellow-700 hover:bg-yellow-100 hover:text-yellow-800 transition-colors'
+              >
+                {isSaving ? (
+                  <Loader2 className='w-3 h-3 animate-spin mr-1' />
+                ) : (
+                  <Save className='w-3 h-3 mr-1' />
+                )}
+                Save Changes
+              </Button>
+            )}
+          </CardHeader>
+
+          <CardContent className='p-0 flex-1 h-full'>
+            {/* TEXTAREA REPLACES DIV */}
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              className='w-full h-full resize-none border-0 focus-visible:ring-0 p-5 text-sm leading-relaxed text-gray-700 rounded-none'
+              placeholder='Enter your text here...'
+            />
           </CardContent>
         </Card>
 

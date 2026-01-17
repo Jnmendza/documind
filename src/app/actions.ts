@@ -1,10 +1,20 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { db } from "@/db";
-import { documents, generations } from "@/db/schema";
-import { revalidatePath } from "next/cache";
 import { eq, and } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
+import { auth } from "@clerk/nextjs/server";
+import { documents, generations } from "@/db/schema";
+
+// Use 'require' to avoid TypeScript "no default export" issues with this specific package
+const { PDFParse } = require("pdf-parse");
+
+// (Optional) Keep the polyfill just in case, though v2 is more robust
+// @ts-ignore
+if (!global.DOMMatrix) {
+  // @ts-ignore
+  global.DOMMatrix = Array;
+}
 
 export async function createDocument(formData: FormData) {
   // 1. Auth Check (Always verify on server)
@@ -63,4 +73,77 @@ export async function saveGeneration(input: {
   });
 
   revalidatePath(`/dashboard/document/${input.documentId}`);
+}
+
+export async function createDocumentByUpload(formData: FormData) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  const file = formData.get("file") as File;
+  if (!file) throw new Error("No file uploaded");
+
+  const arrayBuffer = await file.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  // Instead of pdfParse(buffer), we create a new instance
+  const parser = new PDFParse({ data: buffer });
+
+  // Extract the text
+  const result = await parser.getText();
+  const extractedText = result.text;
+
+  // Cleanup to free memory (Important in v2!)
+  await parser.destroy();
+
+  // Save to Database (Same as before)
+  const [newDoc] = await db
+    .insert(documents)
+    .values({
+      userId: userId,
+      title: file.name,
+      content: extractedText || "No text found in PDF.",
+    })
+    .returning();
+
+  revalidatePath("/dashboard");
+  return { success: true, docId: newDoc.id };
+}
+
+export async function updateDocument(documentId: string, newContent: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  // Verify ownership
+  const [doc] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+
+  if (!doc) throw new Error("Unauthorized");
+
+  // Update the content
+  await db
+    .update(documents)
+    .set({ content: newContent })
+    .where(eq(documents.id, documentId));
+
+  revalidatePath(`/dashboard/document/${documentId}`);
+}
+
+export async function deleteDocument(documentId: string) {
+  const { userId } = await auth();
+  if (!userId) throw new Error("Unauthorized");
+
+  // Verify ownership
+  const [doc] = await db
+    .select()
+    .from(documents)
+    .where(and(eq(documents.id, documentId), eq(documents.userId, userId)));
+
+  if (!doc) throw new Error("Unauthorized");
+
+  // Delete the document
+  await db.delete(documents).where(eq(documents.id, documentId));
+
+  revalidatePath("/dashboard");
 }

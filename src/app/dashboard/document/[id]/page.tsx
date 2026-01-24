@@ -5,7 +5,6 @@ import { eq, and, desc } from "drizzle-orm";
 import { redirect, notFound } from "next/navigation";
 import AiEditor from "@/components/ai-editor";
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 // Define the shape of the params (Next.js 15 requires awaiting params)

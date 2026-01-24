@@ -19,8 +19,10 @@ export async function UsageMeter() {
     prefix: "@upstash/ratelimit",
   });
 
-  const { remaining, limit, reset } = await ratelimit.limit(userId);
+  const { remaining } = await ratelimit.getRemaining(userId);
+  const limit = 3;
 
+  // Calculate percentage
   const used = limit - remaining;
   const percentage = (used / limit) * 100;
 
@@ -34,7 +36,7 @@ export async function UsageMeter() {
       </div>
       <Progress value={percentage} className='h-2' />
       <p className='text-xs text-gray-500'>
-        Resets at {new Date(reset).toLocaleTimeString()}.
+        Credits reset automatically every 24 hours.
       </p>
     </div>
   );
